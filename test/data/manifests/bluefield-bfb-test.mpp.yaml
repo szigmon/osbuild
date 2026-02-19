@@ -1,8 +1,8 @@
 version: '2'
 mpp-vars:
-  # These variables must be set to match your specific kernel/initramfs/rootfs
-  # artifacts. The sha256 values are content hashes of the files and will
-  # differ for every build. Compute them with: sha256sum <file>
+  # Set these to your actual kernel/initramfs/rootfs artifact URLs and their
+  # sha256 content hashes. osbuild downloads each file from the URL and
+  # verifies the sha256 before use. Compute hashes with: sha256sum <file>
   kernel_url: "https://example.com/rhcos-live-kernel.aarch64"
   kernel_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
   initramfs_url: "https://example.com/rhcos-live-initramfs.aarch64.img"
@@ -12,11 +12,11 @@ mpp-vars:
 
   output_filename: "rhcos-bluefield.bfb"
 
-  # OS-specific boot args added by the caller on top of hardware defaults.
-  # For CoreOS/RHCOS on BlueField, ignition args are required here.
-  # The stage itself only sets hardware-specific defaults (console, earlycon,
-  # initrd, modprobe.blacklist=mlxbf_pmc).
-  extra_boot_args: []
+  # OS-specific boot args appended on top of hardware defaults.
+  # Hardware defaults (console, earlycon, initrd, modprobe.blacklist=mlxbf_pmc)
+  # are set by the mpp-eval below and come from the stage's default_args_v2.
+  # For CoreOS/RHCOS add ignition args here; leave empty [] for other distros.
+  os_boot_args: []
 
 sources:
   org.osbuild.curl:
@@ -54,4 +54,4 @@ pipelines:
           boot_args_v2:
             mpp-eval: >-
               ["console=hvc0", "console=ttyAMA0", "earlycon=pl011,0x13010000",
-               "initrd=initramfs", "modprobe.blacklist=mlxbf_pmc"] + extra_boot_args
+               "initrd=initramfs", "modprobe.blacklist=mlxbf_pmc"] + os_boot_args
