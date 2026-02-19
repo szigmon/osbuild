@@ -15,8 +15,6 @@ mpp-vars:
   rootfs_url: "https://example.com/rhcos-live-rootfs.aarch64.img"
   rootfs_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000002"
 
-  output_filename: "rhcos-bluefield.bfb"
-
 sources:
   org.osbuild.curl:
     items:
@@ -48,8 +46,7 @@ pipelines:
             references:
               mpp-eval: "{rootfs_sha256: {}}"
         options:
-          filename:
-            mpp-format-string: "{output_filename}"
+          filename: "rhcos-bluefield.bfb"
           # boot_args_v2 uses stage defaults (console, earlycon, initrd,
           # modprobe.blacklist=mlxbf_pmc). Override here to add OS-specific
           # args, e.g. for RHCOS: boot_args_v2: ["console=hvc0", ...,
