@@ -17,12 +17,6 @@ mpp-vars:
 
   output_filename: "rhcos-bluefield.bfb"
 
-  # OS-specific boot args appended on top of hardware defaults.
-  # Hardware defaults (console, earlycon, initrd, modprobe.blacklist=mlxbf_pmc)
-  # are set by the mpp-eval below and come from the stage's default_args_v2.
-  # For CoreOS/RHCOS add ignition args here; leave empty [] for other distros.
-  os_boot_args: []
-
 sources:
   org.osbuild.curl:
     items:
@@ -56,7 +50,7 @@ pipelines:
         options:
           filename:
             mpp-format-string: "{output_filename}"
-          boot_args_v2:
-            mpp-eval: >-
-              ["console=hvc0", "console=ttyAMA0", "earlycon=pl011,0x13010000",
-               "initrd=initramfs", "modprobe.blacklist=mlxbf_pmc"] + os_boot_args
+          # boot_args_v2 uses stage defaults (console, earlycon, initrd,
+          # modprobe.blacklist=mlxbf_pmc). Override here to add OS-specific
+          # args, e.g. for RHCOS: boot_args_v2: ["console=hvc0", ...,
+          # "ignition.firstboot", "ignition.platform.id=nvidiabluefield"]
