@@ -106,12 +106,9 @@ def test_bfb_command_generation(mock_file, mock_run, mocked_temp_dir, stage_modu
     # Get the actual command
     actual_cmd = mock_run.call_args[0][0]
 
-    # Verify key parts of the command
-    assert actual_cmd[0] == "/usr/bin/mlx-mkbfb"
-    assert "--image" in actual_cmd
-    assert "--initramfs" in actual_cmd
-    assert "--capsule" in actual_cmd
-    assert "/lib/firmware/mellanox/boot/default.bfb" in actual_cmd
+    # Verify expected parts of the command are present
+    for part in expected_cmd_parts:
+        assert part in actual_cmd, f"Expected {part!r} in command: {actual_cmd}"
     assert f"{output_dir}/{options['filename']}" in actual_cmd
 
 

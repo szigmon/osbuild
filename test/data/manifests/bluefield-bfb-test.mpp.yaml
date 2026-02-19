@@ -1,9 +1,5 @@
 version: '2'
 mpp-vars:
-  # Real file hashes from /root/generic-rhcos-bluefield/
-  kernel_checksum: "sha256:aefac1f427dfae45828371b0e5662a56948129cc59126752bc01ba0f723516ba"
-  initramfs_checksum: "sha256:8968d45f49a0411a37d40dc58a9e07356a27ac9469f76a7701167b60a78a0c66"
-  rootfs_checksum: "sha256:c8cc118a9661d6c5694c99f89e53a0387b717156b2b422362b985b04bfef87a2"
   output_filename: "rhcos-bluefield-generic.bfb"
 
   # CoreOS-specific boot args provided by caller (not hardcoded in stage)
