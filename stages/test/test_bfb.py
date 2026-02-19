@@ -1,0 +1,181 @@
+#!/usr/bin/python3
+
+import tempfile
+import unittest.mock
+from unittest.mock import patch
+
+import pytest
+
+STAGE_NAME = "org.osbuild.bfb"
+
+
+@pytest.fixture(name="mocked_temp_dir")
+def mocked_temp_dir_fixture(tmp_path):
+    with patch("tempfile.TemporaryDirectory") as mock_temp_dir:
+        mock_temp_dir.return_value.__enter__.return_value = str(tmp_path)
+        yield tmp_path
+
+
+FAKE_INPUTS = {
+    "kernel": {
+        "path": "/input/kernel/path",
+        "data": {
+            "files": {
+                "kernel-file": {}
+            }
+        }
+    },
+    "initramfs": {
+        "path": "/input/initramfs/path",
+        "data": {
+            "files": {
+                "initramfs-file": {}
+            }
+        }
+    }
+}
+
+FAKE_INPUTS_WITH_ROOTFS = {
+    **FAKE_INPUTS,
+    "rootfs": {
+        "path": "/input/rootfs/path",
+        "data": {
+            "files": {
+                "rootfs-file": {}
+            }
+        }
+    }
+}
+
+
+@pytest.mark.parametrize("inputs,options,expected_cmd_parts", [
+    # Basic test - kernel + initramfs only
+    (
+        FAKE_INPUTS,
+        {"filename": "test.bfb"},
+        [
+            "/usr/bin/mlx-mkbfb",
+            "--image", "/input/kernel/path/kernel-file",
+            "--initramfs", "/input/initramfs/path/initramfs-file",
+            "--capsule", "/lib/firmware/mellanox/boot/capsule/boot_update2.cap",
+            "/lib/firmware/mellanox/boot/default.bfb",
+        ]
+    ),
+    # Test with custom boot arguments
+    (
+        FAKE_INPUTS,
+        {
+            "filename": "test.bfb",
+            "boot_args_v2": ["custom=arg", "another=arg"]
+        },
+        [
+            "/usr/bin/mlx-mkbfb",
+            "--image", "/input/kernel/path/kernel-file",
+            "--initramfs", "/input/initramfs/path/initramfs-file",
+            "--capsule", "/lib/firmware/mellanox/boot/capsule/boot_update2.cap",
+            "/lib/firmware/mellanox/boot/default.bfb",
+        ]
+    ),
+    # Test with rootfs (should use combined file)
+    (
+        FAKE_INPUTS_WITH_ROOTFS,
+        {"filename": "test.bfb"},
+        [
+            "/usr/bin/mlx-mkbfb",
+            "--image", "/input/kernel/path/kernel-file",
+            "--initramfs",  # Will be combined.img path
+            "--capsule", "/lib/firmware/mellanox/boot/capsule/boot_update2.cap",
+            "/lib/firmware/mellanox/boot/default.bfb",
+        ]
+    ),
+])
+@patch("subprocess.run")
+@patch("builtins.open", new_callable=unittest.mock.mock_open)
+def test_bfb_command_generation(mock_file, mock_run, mocked_temp_dir, stage_module, inputs, options, expected_cmd_parts):
+    """Test that stage generates correct mlx-mkbfb command"""
+
+    output_dir = "/fake/output"
+
+    # Call the stage
+    stage_module.main(inputs, output_dir, options)
+
+    # Verify subprocess.run was called
+    mock_run.assert_called_once()
+
+    # Get the actual command
+    actual_cmd = mock_run.call_args[0][0]
+
+    # Verify key parts of the command
+    assert actual_cmd[0] == "/usr/bin/mlx-mkbfb"
+    assert "--image" in actual_cmd
+    assert "--initramfs" in actual_cmd
+    assert "--capsule" in actual_cmd
+    assert "/lib/firmware/mellanox/boot/default.bfb" in actual_cmd
+    assert f"{output_dir}/{options['filename']}" in actual_cmd
+
+
+@patch("subprocess.run")
+@patch("builtins.open", new_callable=unittest.mock.mock_open)
+def test_bfb_default_boot_args(mock_file, mock_run, mocked_temp_dir, stage_module):
+    """Test that default boot arguments are used when none specified"""
+
+    inputs = FAKE_INPUTS
+    options = {"filename": "test.bfb"}
+    output_dir = "/fake/output"
+
+    stage_module.main(inputs, output_dir, options)
+
+    # Verify temp files were written for boot args
+    # The mock_file should have been called to write boot args to temp files
+    mock_file.assert_called()
+
+    # Verify subprocess.run was called
+    mock_run.assert_called_once()
+
+    # Check that boot args temp files are in the command
+    actual_cmd = mock_run.call_args[0][0]
+    assert "--boot-args-v0" in actual_cmd
+    assert "--boot-args-v2" in actual_cmd
+
+
+@patch("subprocess.run")
+def test_bfb_rootfs_combination(mock_run, mocked_temp_dir, stage_module):
+    """Test that initramfs and rootfs are combined when rootfs is provided"""
+
+    inputs = FAKE_INPUTS_WITH_ROOTFS
+    options = {"filename": "test.bfb"}
+    output_dir = str(mocked_temp_dir)
+
+    # Mock file operations for combination
+    with patch("builtins.open", unittest.mock.mock_open(read_data=b"fake_data")) as mock_file:
+        stage_module.main(inputs, output_dir, options)
+
+    # Verify files were read and written for combination
+    mock_file.assert_called()
+
+    # Verify subprocess.run was called
+    mock_run.assert_called_once()
+
+    # Check that combined image path is used in initramfs argument
+    actual_cmd = mock_run.call_args[0][0]
+    initramfs_idx = actual_cmd.index("--initramfs") + 1
+    initramfs_path = actual_cmd[initramfs_idx]
+    assert "combined.img" in initramfs_path
+
+
+def test_parse_input(stage_module):
+    """Test the parse_input helper function"""
+
+    test_inputs = {
+        "test": {
+            "path": "/test/path",
+            "data": {
+                "files": {
+                    "testfile": {}
+                }
+            }
+        }
+    }
+
+    result = stage_module.parse_input(test_inputs, "test")
+    assert result == "/test/path/testfile"

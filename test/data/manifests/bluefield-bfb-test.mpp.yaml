@@ -1,0 +1,57 @@
+version: '2'
+mpp-vars:
+  # Test variables for BFB creation
+  bfb_filename: "rhcos-bluefield-test.bfb"
+  # Kernel arguments for CoreOS on BlueField
+  extra_boot_args:
+    - "ignition.firstboot"
+    - "ignition.platform.id=nvidiabluefield"
+    - "modprobe.blacklist=mlxbf_pmc"
+
+pipelines:
+  - name: bfb-test
+    build: name:build
+    stages:
+      - type: org.osbuild.bfb
+        inputs:
+          kernel:
+            type: org.osbuild.files
+            origin: org.osbuild.source
+            references:
+              mpp-eval: file_references.kernel
+          initramfs:
+            type: org.osbuild.files
+            origin: org.osbuild.source
+            references:
+              mpp-eval: file_references.initramfs
+          rootfs:
+            type: org.osbuild.files
+            origin: org.osbuild.source
+            references:
+              mpp-eval: file_references.rootfs
+        options:
+          filename:
+            mpp-format-string: '{bfb_filename}'
+          boot_args_v2:
+            mpp-eval: |
+              # Combine hardware defaults with extra args
+              hardware_defaults = [
+                "console=hvc0",
+                "console=ttyAMA0",
+                "earlycon=pl011,0x13010000",
+                "initrd=initramfs"
+              ]
+              hardware_defaults + extra_boot_args
+
+sources:
+  org.osbuild.curl:
+    items:
+      # Placeholder - in real usage these would be actual file references
+      mpp-eval: |
+        {
+          "file_references": {
+            "kernel": {"sha256:placeholder_kernel_hash": {"url": "file:///path/to/kernel"}},
+            "initramfs": {"sha256:placeholder_initramfs_hash": {"url": "file:///path/to/initramfs"}},
+            "rootfs": {"sha256:placeholder_rootfs_hash": {"url": "file:///path/to/rootfs"}}
+          }
+        }
