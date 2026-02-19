@@ -1,14 +1,15 @@
 version: '2'
 mpp-vars:
-  # Set these to your actual kernel/initramfs/rootfs artifact URLs and their
-  # sha256 content hashes. osbuild downloads each file from the URL and
-  # verifies the sha256 before use. Compute hashes with: sha256sum <file>
-  kernel_url: "https://example.com/rhcos-live-kernel.aarch64"
-  kernel_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
-  initramfs_url: "https://example.com/rhcos-live-initramfs.aarch64.img"
-  initramfs_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000001"
-  rootfs_url: "https://example.com/rhcos-live-rootfs.aarch64.img"
-  rootfs_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+  # RHCOS 4.20.11 aarch64 live artifacts from the Red Hat mirror.
+  # Update these to match your target OpenShift version:
+  # https://mirror.openshift.com/pub/openshift-v4/aarch64/dependencies/rhcos/
+  # Checksums are published alongside each release in sha256sum.txt.
+  kernel_url: "https://mirror.openshift.com/pub/openshift-v4/aarch64/dependencies/rhcos/4.20/latest/rhcos-4.20.11-aarch64-live-kernel.aarch64"
+  kernel_sha256: "sha256:b5ea6189785c9b2a5fa7520d9893a7f51418bcd8586c62e65a034bb741b3aa00"
+  initramfs_url: "https://mirror.openshift.com/pub/openshift-v4/aarch64/dependencies/rhcos/4.20/latest/rhcos-4.20.11-aarch64-live-initramfs.aarch64.img"
+  initramfs_sha256: "sha256:d726cbeb275b7b5f2d5a5177f3866f80acbeb6e3566af7dac1895a625373fcb7"
+  rootfs_url: "https://mirror.openshift.com/pub/openshift-v4/aarch64/dependencies/rhcos/4.20/latest/rhcos-4.20.11-aarch64-live-rootfs.aarch64.img"
+  rootfs_sha256: "sha256:66078a363d4e76540c4cedc8e4756f67a852c90964e8af5ac4dec8a18995ec5b"
 
   output_filename: "rhcos-bluefield.bfb"
 
