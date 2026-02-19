@@ -45,13 +45,6 @@ pipelines:
           filename:
             mpp-format-string: "{output_filename}"
           boot_args_v2:
-            mpp-eval: |
-              # Hardware defaults from the stage + CoreOS-specific args from caller
-              hardware_defaults = [
-                "console=hvc0",
-                "console=ttyAMA0",
-                "earlycon=pl011,0x13010000",
-                "initrd=initramfs",
-                "modprobe.blacklist=mlxbf_pmc"
-              ]
-              hardware_defaults + extra_boot_args
+            mpp-eval: >-
+              ["console=hvc0", "console=ttyAMA0", "earlycon=pl011,0x13010000",
+               "initrd=initramfs", "modprobe.blacklist=mlxbf_pmc"] + extra_boot_args
