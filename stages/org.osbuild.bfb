@@ -45,7 +45,14 @@ def main(inputs, output, options):
     # Boot arguments - defaults for BlueField DPUs
     # No BF1/BF2 support planned - empty defaults
     default_args_v0 = []
-    # Hardware-specific defaults required for BlueField DPUs
+    # Hardware-specific defaults required for BlueField DPUs. These arguments
+    # were taken from NVIDIA's bfb-build repository:
+    # https://github.com/Mellanox/bfb-build
+    # - console=hvc0: /dev/rshim0/console (rshim virtual console)
+    # - console=ttyAMA0: IPMI serial console
+    # - earlycon=pl011,0x13010000: early serial output on BF3 UART address
+    # - initrd=initramfs: tell the bootloader which initramfs to use
+    # - modprobe.blacklist=mlxbf_pmc: avoid PMC driver conflicts on BF3
     default_args_v2 = [
         "console=hvc0",
         "console=ttyAMA0",
