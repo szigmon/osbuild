@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import copy
 import tempfile
 import unittest.mock
 from unittest.mock import patch
@@ -96,8 +97,8 @@ def test_bfb_command_generation(mock_file, mock_run, mocked_temp_dir, stage_modu
 
     output_dir = "/fake/output"
 
-    # Call the stage
-    stage_module.main(inputs, output_dir, options)
+    # Deep copy to prevent parse_input()'s popitem() from mutating shared test data
+    stage_module.main(copy.deepcopy(inputs), output_dir, options)
 
     # Verify subprocess.run was called
     mock_run.assert_called_once()
@@ -119,11 +120,10 @@ def test_bfb_command_generation(mock_file, mock_run, mocked_temp_dir, stage_modu
 def test_bfb_default_boot_args(mock_file, mock_run, mocked_temp_dir, stage_module):
     """Test that default boot arguments are used when none specified"""
 
-    inputs = FAKE_INPUTS
     options = {"filename": "test.bfb"}
     output_dir = "/fake/output"
 
-    stage_module.main(inputs, output_dir, options)
+    stage_module.main(copy.deepcopy(FAKE_INPUTS), output_dir, options)
 
     # Verify temp files were written for boot args
     # The mock_file should have been called to write boot args to temp files
@@ -142,13 +142,12 @@ def test_bfb_default_boot_args(mock_file, mock_run, mocked_temp_dir, stage_modul
 def test_bfb_rootfs_combination(mock_run, mocked_temp_dir, stage_module):
     """Test that initramfs and rootfs are combined when rootfs is provided"""
 
-    inputs = FAKE_INPUTS_WITH_ROOTFS
     options = {"filename": "test.bfb"}
     output_dir = str(mocked_temp_dir)
 
     # Mock file operations for combination
     with patch("builtins.open", unittest.mock.mock_open(read_data=b"fake_data")) as mock_file:
-        stage_module.main(inputs, output_dir, options)
+        stage_module.main(copy.deepcopy(FAKE_INPUTS_WITH_ROOTFS), output_dir, options)
 
     # Verify files were read and written for combination
     mock_file.assert_called()
