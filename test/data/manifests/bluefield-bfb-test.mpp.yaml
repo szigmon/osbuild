@@ -1,21 +1,32 @@
 version: '2'
 mpp-vars:
-  output_filename: "rhcos-bluefield-generic.bfb"
+  # These variables must be set to match your specific kernel/initramfs/rootfs
+  # artifacts. The sha256 values are content hashes of the files and will
+  # differ for every build. Compute them with: sha256sum <file>
+  kernel_url: "https://example.com/rhcos-live-kernel.aarch64"
+  kernel_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  initramfs_url: "https://example.com/rhcos-live-initramfs.aarch64.img"
+  initramfs_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000001"
+  rootfs_url: "https://example.com/rhcos-live-rootfs.aarch64.img"
+  rootfs_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000002"
 
-  # CoreOS-specific boot args provided by caller (not hardcoded in stage)
-  extra_boot_args:
-    - "ignition.firstboot"
-    - "ignition.platform.id=nvidiabluefield"
+  output_filename: "rhcos-bluefield.bfb"
+
+  # OS-specific boot args added by the caller on top of hardware defaults.
+  # For CoreOS/RHCOS on BlueField, ignition args are required here.
+  # The stage itself only sets hardware-specific defaults (console, earlycon,
+  # initrd, modprobe.blacklist=mlxbf_pmc).
+  extra_boot_args: []
 
 sources:
   org.osbuild.curl:
     items:
-      sha256:aefac1f427dfae45828371b0e5662a56948129cc59126752bc01ba0f723516ba:
-        url: "file:///root/generic-rhcos-bluefield/rhcos-generic_4.21.1-live-kernel.aarch64"
-      sha256:8968d45f49a0411a37d40dc58a9e07356a27ac9469f76a7701167b60a78a0c66:
-        url: "file:///root/generic-rhcos-bluefield/rhcos-generic_4.21.1-live-initramfs.aarch64.img"
-      sha256:c8cc118a9661d6c5694c99f89e53a0387b717156b2b422362b985b04bfef87a2:
-        url: "file:///root/generic-rhcos-bluefield/rhcos-generic_4.21.1-live-rootfs.aarch64.img"
+      mpp-eval: |
+        {
+          kernel_sha256: {"url": kernel_url},
+          initramfs_sha256: {"url": initramfs_url},
+          rootfs_sha256: {"url": rootfs_url},
+        }
 
 pipelines:
   - name: bfb
@@ -26,17 +37,17 @@ pipelines:
             type: org.osbuild.files
             origin: org.osbuild.source
             references:
-              sha256:aefac1f427dfae45828371b0e5662a56948129cc59126752bc01ba0f723516ba: {}
+              mpp-eval: "{kernel_sha256: {}}"
           initramfs:
             type: org.osbuild.files
             origin: org.osbuild.source
             references:
-              sha256:8968d45f49a0411a37d40dc58a9e07356a27ac9469f76a7701167b60a78a0c66: {}
+              mpp-eval: "{initramfs_sha256: {}}"
           rootfs:
             type: org.osbuild.files
             origin: org.osbuild.source
             references:
-              sha256:c8cc118a9661d6c5694c99f89e53a0387b717156b2b422362b985b04bfef87a2: {}
+              mpp-eval: "{rootfs_sha256: {}}"
         options:
           filename:
             mpp-format-string: "{output_filename}"
